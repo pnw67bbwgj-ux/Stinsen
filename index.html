@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stinsen">
+<title>Stinsen</title>
+<style>
+:root {
+  --bg: #000000;
+  --card: #0a0a0a;
+  --border: #2a2a2a;
+  --yellow: #ffcc00;
+  --white: #ffffff;
+  --gray: #aaaaaa;
+  --green: #00cc66;
+  --red: #ff4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  min-height: 100vh;
+  padding: env(safe-area-inset-top) 16px 90px 16px;
+}
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.top h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.top .label {
+  color: var(--gray);
+  font-size: 0.95rem;
+  margin-top: -4px;
+}
+.clock {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--yellow);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+.next-card {
+  border: 2px solid var(--yellow);
+  border-radius: 12px;
+  padding: 18px 18px 16px;
+  margin-bottom: 20px;
+  background: #050505;
+  position: relative;
+}
+.next-card .top-right {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  text-align: right;
+  font-size: 0.85rem;
+}
+.next-card .top-right .track-box {
+  margin-left: auto;
+  margin-bottom: 4px;
+}
+.next-card .top-right .eta {
+  color: var(--gray);
+  font-size: 0.8rem;
+}
+.next-card .label {
+  color: var(--gray);
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+.next-time {
+  font-size: 3.6rem;
+  font-weight: 700;
+  color: var(--yellow);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.next-dest {
+  font-size: 1.45rem;
+  font-weight: 600;
+  margin-top: 10px;
+  line-height: 1.2;
+}
+.operator-icon {
+  height: 18px;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 6px;
+  border-radius: 2px;
+}
+.next-meta .operator-icon {
+  height: 22px;
+}
+.next-track-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+.track-box {
+  border: 2px solid var(--white);
+  border-radius: 6px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+.next-eta {
+  color: var(--gray);
+  font-size: 0.95rem;
+}
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 8px 0 10px;
+  color: var(--yellow);
+}
+.list-header {
+  display: grid;
+  grid-template-columns: 70px 1fr 50px 60px;
+  color: var(--gray);
+  font-size: 0.85rem;
+  padding: 6px 4px 8px;
+  border-bottom: 1px solid #333;
+}
+.train-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 50px 60px;
+  align-items: start;
+  padding: 8px 4px;
+  border-bottom: 1px solid #222;
+}
+.train-row .time {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--yellow);
+  font-variant-numeric: tabular-nums;
+}
+.train-row .dest {
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.train-row .time-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.train-row .icon-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: 4px;
+}
+.train-row .icon-status .operator-icon {
+  height: 20px;
+  margin: 0;
+}
+.train-row .icon-status .status {
+  font-size: 1rem;
+  line-height: 1;
+  white-space: nowrap;
+  font-weight: 500;
+  margin-top: 2px;
+}
+.train-row .track {
+  display: flex;
+  justify-content: center;
+}
+.train-row .track-box {
+  width: 36px;
+  height: 36px;
+  font-size: 1.2rem;
+}
+.train-row .num {
+  text-align: right;
+  font-size: 0.95rem;
+  color: var(--gray);
+}
+.pos.delayed { color: var(--red); }
+.pos.ontime { color: var(--green); }
+.pos.early { color: var(--green); }
+.train-row.canceled {
+  opacity: 0.75;
+}
+.train-row.canceled .time,
+.train-row.canceled .dest {
+  text-decoration: line-through;
+  color: var(--red);
+}
+.canceled-badge {
+  display: inline-block;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.5px;
+}
+.refresh-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111;
+  color: var(--yellow);
+  border: 1px solid #444;
+  border-radius: 24px;
+  padding: 12px 28px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 9999;
+  display: none;
+  overflow-y: auto;
+  padding: env(safe-area-inset-top) 12px 40px 12px;
+}
+.detail-overlay.active { display: block; }
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0 16px;
+  border-bottom: 2px solid var(--yellow);
+  margin-bottom: 12px;
+}
+.detail-header h2 {
+  font-size: 1.4rem;
+  color: var(--yellow);
+}
+.detail-close {
+  background: #222;
+  color: var(--yellow);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.detail-table th {
+  text-align: left;
+  color: var(--gray);
+  font-weight: 500;
+  padding: 8px 6px;
+  border-bottom: 1px solid #333;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+.detail-table td {
+  padding: 10px 6px;
+  border-bottom: 1px solid #222;
+  vertical-align: middle;
+}
+.detail-table .station {
+  font-weight: 600;
+  color: var(--white);
+}
+.detail-table .time-adv {
+  color: var(--gray);
+  font-size: 0.8rem;
+  text-decoration: line-through;
+}
+.detail-table .time-est {
+  color: var(--yellow);
+  font-weight: 600;
+}
+.detail-table .diff {
+  font-weight: 600;
+  text-align: right;
+}
+.detail-table .diff.pos { color: var(--green); }
+.detail-table .diff.neg { color: var(--red); }
+.train-row { cursor: pointer; }
+.train-row:active { background: #111; }
+</style>
+</head>
+<body>
+<div class="top">
+  <div>
+    <div style="font-size:1.1rem;font-weight:700;letter-spacing:1px;color:var(--yellow);margin-bottom:2px;">STINSEN</div>
+    <div style="font-size:0.75rem;color:var(--gray);margin-bottom:4px;letter-spacing:0.5px;">AKTUELL STATION</div>
+    <select id="station-select" style="background:#111;color:#fff;border:1px solid #444;border-radius:8px;padding:6px 10px;font-size:1.6rem;font-weight:700;font-family:inherit;outline:none;">
+      <option value="Ved" selected>Vedum</option>
+      <option value="Vaa">Vara</option>
+      <option value="Hrc">Herrljunga</option>
+      <option value="Uv">Uddevalla</option>
+      <option value="Vbc">Varberg</option>
+      <option value="Bsc">Borås</option>
+      <option value="G">Göteborg</option>
+      <option value="Cst">Stockholm</option>
+    </select>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+    <div class="clock" id="clock">--:--:--</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="loadData()" style="background:#222;color:var(--yellow);border:1px solid #444;border-radius:8px;padding:6px 12px;font-size:0.85rem;cursor:pointer;">↻ Uppdatera</button>
+      <button onclick="openConfig()" style="background:#222;color:var(--yellow);border:1px solid #444;border-radius:8px;padding:6px 12px;font-size:1rem;cursor:pointer;" title="Inställningar">⚙</button>
+    </div>
+  </div>
+</div>
+
+<div id="next-card" class="next-card" style="display:none;">
+  <div class="top-right">
+    <div class="track-box" id="next-track">-</div>
+    <div class="eta" id="next-eta"></div>
+  </div>
+  <div class="label">Nästa tåg</div>
+  <div class="next-time" id="next-time">--:--</div>
+  <div class="next-dest" id="next-dest">–</div>
+  <div class="next-meta" id="next-meta"></div>
+  <div class="pos" id="next-pos" style="padding-left:0;margin-top:12px;"></div>
+</div>
+
+<div class="section-title">Kommande avgångar</div>
+<div class="list-header">
+  <div>Tid</div>
+  <div>Till</div>
+  <div>Spår</div>
+  <div>Tåg</div>
+</div>
+<div id="board"></div>
+
+<div id="config-overlay" class="detail-overlay">
+  <div class="detail-header">
+    <h2>Inställningar</h2>
+    <button class="detail-close" onclick="closeConfig()">Stäng</button>
+  </div>
+  <div style="padding:16px 0;">
+    <label style="display:block;color:var(--gray);font-size:0.85rem;margin-bottom:6px;">Trafikverket API-nyckel</label>
+    <input id="api-key-input" type="text" placeholder="Klistra in din API-nyckel" style="width:100%;background:#111;color:#fff;border:1px solid #444;border-radius:8px;padding:10px;font-size:1rem;font-family:monospace;">
+    <button onclick="saveApiKey()" style="margin-top:12px;background:var(--yellow);color:#000;border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;">Spara</button>
+    <p style="margin-top:16px;color:var(--gray);font-size:0.8rem;line-height:1.4;">Nyckeln sparas bara lokalt i din webbläsare. Du får en nyckel på <a href="https://api.trafikinfo.trafikverket.se/" target="_blank" style="color:var(--yellow);">Trafikverkets API-portal</a>.</p>
+  </div>
+</div>
+  <div class="detail-header">
+    <h2 id="detail-title">Tåg</h2>
+    <button class="detail-close" onclick="closeDetail()">Stäng</button>
+  </div>
+  <div id="detail-content"></div>
+</div>
+
+<script>
+const API_URL = "https://api.trafikinfo.trafikverket.se/v2/data.json";
+let API_KEY = localStorage.getItem("stinsen_api_key") || "";
+let STATION = "Ved";
+
+document.getElementById("station-select").addEventListener("change", (e) => {
+  STATION = e.target.value;
+  loadData();
+});
+
+let stationNames = {};
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById("clock").textContent = now.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function openConfig() {
+  document.getElementById("api-key-input").value = API_KEY;
+  document.getElementById("config-overlay").classList.add("active");
+}
+function closeConfig() {
+  document.getElementById("config-overlay").classList.remove("active");
+}
+function saveApiKey() {
+  const key = document.getElementById("api-key-input").value.trim();
+  if (key) {
+    API_KEY = key;
+    localStorage.setItem("stinsen_api_key", key);
+    closeConfig();
+    loadData();
+  } else {
+    alert("Fyll i en API-nyckel");
+  }
+}
+
+async function api(queryXml) {
+  if (!API_KEY) {
+    openConfig();
+    throw new Error("Ingen API-nyckel angiven");
+  }
+  const body = `<REQUEST><LOGIN authenticationkey="${API_KEY}" />${queryXml}</REQUEST>`;
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body
+  });
+  if (!res.ok) throw new Error("API-fel " + res.status);
+  const json = await res.json();
+  if (json.RESPONSE?.RESULT?.[0]?.ERROR) {
+    throw new Error(json.RESPONSE.RESULT[0].ERROR.MESSAGE || "API-fel");
+  }
+  return json.RESPONSE?.RESULT?.[0] || {};
+}
+
+function formatTime(iso) {
+  if (!iso) return "--:--";
+  const d = new Date(iso);
+  return d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+function delayMinutes(advertised, estimated) {
+  if (!advertised || !estimated) return 0;
+  return Math.round((new Date(estimated) - new Date(advertised)) / 60000);
+}
+
+function minutesUntil(iso) {
+  if (!iso) return null;
+  return Math.round((new Date(iso) - new Date()) / 60000);
+}
+
+async function loadStationNames(signatures) {
+  if (signatures.length === 0) return;
+  const filters = signatures.map(s => `<EQ name="LocationSignature" value="${s}" />`).join("");
+  const q = `<QUERY objecttype="TrainStation" schemaversion="1.4" limit="100">
+    <FILTER><OR>${filters}</OR></FILTER>
+    <INCLUDE>LocationSignature</INCLUDE>
+    <INCLUDE>AdvertisedLocationName</INCLUDE>
+    <INCLUDE>OfficialLocationName</INCLUDE>
+  </QUERY>`;
+  try {
+    const data = await api(q);
+    (data.TrainStation || []).forEach(s => {
+      stationNames[s.LocationSignature] = s.AdvertisedLocationName || s.OfficialLocationName || s.LocationSignature;
+    });
+  } catch (e) { console.warn(e); }
+}
+
+function getName(sig) {
+  return stationNames[sig] || sig;
+}
+
+function getOperatorIcon(product, operator) {
+  const p = (product || "").toLowerCase();
+  const o = (operator || "").toLowerCase();
+  if (p.includes("västtåg") || p.includes("vasttag") || o.includes("sj")) {
+    return "https://commons.wikimedia.org/wiki/Special:FilePath/Vasttrafik_logo.svg?width=120";
+  }
+  if (p.includes("sj") || o === "sj") {
+    return "https://commons.wikimedia.org/wiki/Special:FilePath/SJ_logo.svg?width=80";
+  }
+  return "";
+}
+
+async function getDepartures() {
+  const q = `<QUERY objecttype="TrainAnnouncement" schemaversion="1.9" orderby="AdvertisedTimeAtLocation" limit="30">
+    <FILTER>
+      <AND>
+        <EQ name="LocationSignature" value="${STATION}" />
+        <EQ name="ActivityType" value="Avgang" />
+        <GT name="AdvertisedTimeAtLocation" value="$dateadd(-0.00:20:00)" />
+        <LT name="AdvertisedTimeAtLocation" value="$dateadd(0.06:00:00)" />
+      </AND>
+    </FILTER>
+  </QUERY>`;
+  const data = await api(q);
+  return data.TrainAnnouncement || [];
+}
+
+async function getTrainJourney(trainIdent, date) {
+  const q = `<QUERY objecttype="TrainAnnouncement" schemaversion="1.9" orderby="AdvertisedTimeAtLocation" limit="100">
+    <FILTER>
+      <AND>
+        <EQ name="AdvertisedTrainIdent" value="${trainIdent}" />
+        <EQ name="ScheduledDepartureDateTime" value="${date}" />
+      </AND>
+    </FILTER>
+    <INCLUDE>LocationSignature</INCLUDE>
+    <INCLUDE>ActivityType</INCLUDE>
+    <INCLUDE>AdvertisedTimeAtLocation</INCLUDE>
+    <INCLUDE>EstimatedTimeAtLocation</INCLUDE>
+    <INCLUDE>TimeAtLocation</INCLUDE>
+    <INCLUDE>Canceled</INCLUDE>
+    <INCLUDE>TrackAtLocation</INCLUDE>
+  </QUERY>`;
+  const data = await api(q);
+  return data.TrainAnnouncement || [];
+}
+
+function getDeviationText(d) {
+  const devs = d.Deviation || [];
+  const texts = devs.map(x => x.Description).filter(Boolean);
+  if (texts.length === 0) {
+    if (d.Canceled) return "INSTÄLLT";
+    return "";
+  }
+  return texts.join(" • ");
+}
+
+function isCanceledOrInställt(d) {
+  if (d.Canceled) return true;
+  const texts = (d.Deviation || []).map(x => (x.Description || "").toLowerCase());
+  return texts.some(t => t.includes("inställt") || t.includes("installt"));
+}
+
+function describePosition(journey) {
+  if (!journey || journey.length === 0) return { text: "", status: "" };
+
+  // Senaste registrerade händelse (TimeAtLocation) – inkluderar både stopp och passerade stationer
+  const withActual = journey
+    .filter(s => s.TimeAtLocation)
+    .sort((a, b) => new Date(b.TimeAtLocation) - new Date(a.TimeAtLocation));
+
+  if (withActual.length === 0) {
+    return { text: "Ingen position ännu", status: "" };
+  }
+
+  const last = withActual[0];
+  const name = getName(last.LocationSignature);
+  const act = last.ActivityType === "Avgang" ? "Avgått" : "Ankommit";
+
+  const advertised = last.AdvertisedTimeAtLocation ? new Date(last.AdvertisedTimeAtLocation) : null;
+  const actual = new Date(last.TimeAtLocation);
+  let delayText = "";
+  let status = "ontime";
+
+  if (advertised) {
+    const diffMin = Math.round((actual - advertised) / 60000);
+    if (diffMin > 1) {
+      delayText = ` +${diffMin}`;
+      status = "delayed";
+    } else if (diffMin < -1) {
+      delayText = ` -${Math.abs(diffMin)}`;
+      status = "early";
+    } else {
+      delayText = " i tid";
+      status = "ontime";
+    }
+  }
+
+  return { text: `${name}${delayText}`, status };
+}
+
+async function loadData() {
+  const board = document.getElementById("board");
+  const nextCard = document.getElementById("next-card");
+  board.innerHTML = '<div class="loading">Hämtar avgångar...</div>';
+
+  try {
+    const deps = await getDepartures();
+    if (deps.length === 0) {
+      board.innerHTML = '<div class="empty">Inga avgångar de närmaste timmarna</div>';
+      nextCard.style.display = "none";
+      return;
+    }
+
+    const sigs = new Set([STATION]);
+    deps.forEach(d => {
+      (d.ToLocation || []).forEach(t => sigs.add(t.LocationName));
+      (d.ViaToLocation || []).forEach(t => sigs.add(t.LocationName));
+      (d.FromLocation || []).forEach(t => sigs.add(t.LocationName));
+    });
+
+    const trainKeys = new Map();
+    for (const d of deps) {
+      const key = d.AdvertisedTrainIdent + "|" + d.ScheduledDepartureDateTime;
+      if (!trainKeys.has(key)) {
+        trainKeys.set(key, { ident: d.AdvertisedTrainIdent, date: d.ScheduledDepartureDateTime });
+      }
+    }
+
+    const journeys = {};
+    allJourneys = journeys;
+    const promises = Array.from(trainKeys.values()).map(async (t) => {
+      const j = await getTrainJourney(t.ident, t.date);
+      journeys[t.ident + "|" + t.date] = j;
+      j.forEach(s => sigs.add(s.LocationSignature));
+    });
+    await Promise.all(promises);
+
+    await loadStationNames(Array.from(sigs));
+
+    const sorted = [...deps].sort((a, b) => new Date(a.AdvertisedTimeAtLocation) - new Date(b.AdvertisedTimeAtLocation));
+
+    // Next train card
+    const next = sorted[0];
+    const nextKey = next.AdvertisedTrainIdent + "|" + next.ScheduledDepartureDateTime;
+    const nextJourney = journeys[nextKey] || [];
+    const nextPosObj = describePosition(nextJourney);
+    const nextPos = nextPosObj.text;
+    const nextPosStatus = nextPosObj.status;
+
+    const nextAdv = formatTime(next.AdvertisedTimeAtLocation);
+    const nextEst = formatTime(next.EstimatedTimeAtLocation);
+    const nextDelay = delayMinutes(next.AdvertisedTimeAtLocation, next.EstimatedTimeAtLocation);
+    let nextTimeHtml = nextAdv;
+    if (next.EstimatedTimeAtLocation && nextDelay !== 0 && !next.Canceled) {
+      nextTimeHtml = `<span style="text-decoration:line-through;opacity:0.6;font-size:0.7em;">${nextAdv}</span> <span>${nextEst}</span>`;
+    }
+    // Ingen +X min längre
+
+    const nextDestSig = (next.ToLocation && next.ToLocation[0]?.LocationName) || "?";
+    let nextDest = getName(nextDestSig);
+
+    const nextProduct = (next.ProductInformation && next.ProductInformation[0]?.Description) || "";
+    const nextOp = next.Operator || "";
+    const nextIcon = getOperatorIcon(nextProduct, nextOp);
+    const nextMetaHtml = (nextIcon ? `<img class="operator-icon" src="${nextIcon}" alt="">` : "") + `${nextProduct}, tåg ${next.AdvertisedTrainIdent || ""}`;
+
+    const nextTrack = next.TrackAtLocation || "-";
+    const mins = minutesUntil(next.EstimatedTimeAtLocation || next.AdvertisedTimeAtLocation);
+    const etaText = mins > 0 ? `Avgår om ${mins} min` : (mins === 0 ? "Avgår nu" : "Avgått");
+
+    document.getElementById("next-time").innerHTML = nextTimeHtml;
+    if (isCanceledOrInställt(next)) {
+      nextCard.style.borderColor = "var(--red)";
+      document.getElementById("next-dest").innerHTML = nextDest + ' <span class="canceled-badge">INSTÄLLT</span>';
+    } else {
+      nextCard.style.borderColor = "";
+      document.getElementById("next-dest").textContent = nextDest;
+    }
+    document.getElementById("next-meta").innerHTML = nextMetaHtml;
+    document.getElementById("next-track").textContent = nextTrack;
+    document.getElementById("next-eta").textContent = etaText;
+
+    const nextDev = getDeviationText(next);
+    const nextPosEl = document.getElementById("next-pos");
+    nextPosEl.textContent = nextDev || nextPos || "";
+    nextPosEl.className = "pos " + (nextDev && isCanceledOrInställt(next) ? "canceled" : nextPosStatus);
+    nextCard.style.display = "block";
+    nextCard.onclick = () => window.openDetail(next.AdvertisedTrainIdent, next.ScheduledDepartureDateTime, nextDest);
+    nextCard.style.cursor = "pointer";
+
+    // List
+    board.innerHTML = "";
+    sorted.forEach((d, i) => {
+      if (i === 0) return; // skip next, already shown above
+
+      const key = d.AdvertisedTrainIdent + "|" + d.ScheduledDepartureDateTime;
+      const journey = journeys[key] || [];
+      const posObj = describePosition(journey);
+      const pos = posObj.text;
+      const posStatus = posObj.status;
+
+      const destSig = (d.ToLocation && d.ToLocation[0]?.LocationName) || "?";
+      let dest = getName(destSig);
+
+      const track = d.TrackAtLocation || "-";
+      const trainNo = d.AdvertisedTrainIdent || "";
+      const isCanceled = isCanceledOrInställt(d);
+      const devText = getDeviationText(d);
+      const posText = devText || pos;
+
+      const advTime = formatTime(d.AdvertisedTimeAtLocation);
+      const estTime = formatTime(d.EstimatedTimeAtLocation);
+      const delay = delayMinutes(d.AdvertisedTimeAtLocation, d.EstimatedTimeAtLocation);
+      let timeHtml = advTime;
+      if (d.EstimatedTimeAtLocation && delay !== 0 && !isCanceled) {
+        timeHtml = `<span style="text-decoration:line-through;opacity:0.6;font-size:0.75em;">${advTime}</span> ${estTime}`;
+      }
+      // Ingen diff-text (+X) längre
+
+      const product = ((d.ProductInformation && d.ProductInformation[0]?.Description) || "");
+      const op = d.Operator || "";
+      const icon = getOperatorIcon(product, op);
+      const iconHtml = icon ? `<img class="operator-icon" src="${icon}" alt="">` : "";
+
+      const row = document.createElement("div");
+      row.className = "train-row" + (isCanceled ? " canceled" : "");
+      row.dataset.train = d.AdvertisedTrainIdent;
+      row.dataset.date = d.ScheduledDepartureDateTime;
+      row.dataset.dest = dest;
+      row.onclick = function() {
+        window.openDetail(this.dataset.train, this.dataset.date, this.dataset.dest);
+      };
+      row.innerHTML = `
+        <div class="time-block">
+          <div class="time">${timeHtml}</div>
+          <div class="icon-status">
+            ${iconHtml}
+            ${posText ? `<div class="status pos ${isCanceled ? "canceled" : posStatus}">${posText}</div>` : ""}
+          </div>
+        </div>
+        <div class="dest">${dest}${isCanceled ? '<span class="canceled-badge">INSTÄLLT</span>' : ""}</div>
+        <div class="track"><div class="track-box">${track}</div></div>
+        <div class="num">${trainNo}</div>
+      `;
+      board.appendChild(row);
+    });
+
+    if (board.children.length === 0) {
+      board.innerHTML = '<div class="empty">Inga fler avgångar</div>';
+    }
+  } catch (err) {
+    console.error(err);
+    board.innerHTML = `<div class="empty">Kunde inte hämta data<br><small>${err.message}</small></div>`;
+    nextCard.style.display = "none";
+  }
+}
+
+let allJourneys = {};
+
+window.openDetail = function(trainIdent, date, destName) {
+  const key = trainIdent + "|" + date;
+  const journey = allJourneys[key] || [];
+  const overlay = document.getElementById("detail-overlay");
+  if (!overlay) return;
+  const title = document.getElementById("detail-title");
+  const content = document.getElementById("detail-content");
+
+  title.textContent = `Tåg ${trainIdent} → ${destName}`;
+
+  if (journey.length === 0) {
+    content.innerHTML = '<div class="empty">Ingen detaljinfo tillgänglig för detta tåg</div>';
+    overlay.classList.add("active");
+    return;
+  }
+
+  // Sortera på tid
+  const sorted = [...journey].sort((a, b) => {
+    const ta = new Date(a.AdvertisedTimeAtLocation || a.EstimatedTimeAtLocation || a.TimeAtLocation || 0);
+    const tb = new Date(b.AdvertisedTimeAtLocation || b.EstimatedTimeAtLocation || b.TimeAtLocation || 0);
+    return ta - tb;
+  });
+
+  // Gruppera per station (behåll ordning)
+  const byStation = [];
+  const seen = new Map();
+  sorted.forEach(s => {
+    const sig = s.LocationSignature;
+    if (!seen.has(sig)) {
+      const entry = { name: getName(sig), arr: null, dep: null, track: s.TrackAtLocation || "-" };
+      seen.set(sig, entry);
+      byStation.push(entry);
+    }
+    const entry = seen.get(sig);
+    if (s.ActivityType === "Ankomst") entry.arr = s;
+    if (s.ActivityType === "Avgang") entry.dep = s;
+    if (s.TrackAtLocation) entry.track = s.TrackAtLocation;
+  });
+
+  let html = `<table class="detail-table">
+    <thead>
+      <tr>
+        <th>Plats</th>
+        <th>Spår</th>
+        <th>Ank</th>
+        <th>Avg</th>
+        <th>Diff ank</th>
+        <th>Diff avg</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  byStation.forEach(entry => {
+    const name = entry.name;
+    const track = entry.track;
+
+    function getTimeAndDiff(stop) {
+      if (!stop) return { time: "", diff: "", cls: "" };
+      const act = stop.TimeAtLocation ? formatTime(stop.TimeAtLocation) : "";
+      const est = stop.EstimatedTimeAtLocation ? formatTime(stop.EstimatedTimeAtLocation) : "";
+      const adv = stop.AdvertisedTimeAtLocation ? formatTime(stop.AdvertisedTimeAtLocation) : "";
+      const time = act || est || adv;
+      let diff = "";
+      let cls = "";
+      if (stop.AdvertisedTimeAtLocation && (stop.TimeAtLocation || stop.EstimatedTimeAtLocation)) {
+        const base = new Date(stop.AdvertisedTimeAtLocation);
+        const actual = new Date(stop.TimeAtLocation || stop.EstimatedTimeAtLocation);
+        const dmin = Math.round((actual - base) / 60000);
+        if (dmin > 1) { diff = `+${dmin}`; cls = "neg"; }
+        else if (dmin < -1) { diff = `${dmin}`; cls = "pos"; }
+        else diff = "0";
+      }
+      return { time, diff, cls };
+    }
+
+    const arr = getTimeAndDiff(entry.arr);
+    const dep = getTimeAndDiff(entry.dep);
+
+    html += `<tr>
+      <td class="station">${name}</td>
+      <td>${track}</td>
+      <td>${arr.time}</td>
+      <td>${dep.time}</td>
+      <td class="diff ${arr.cls}">${arr.diff}</td>
+      <td class="diff ${dep.cls}">${dep.diff}</td>
+    </tr>`;
+  });
+
+  html += "</tbody></table>";
+  content.innerHTML = html;
+  overlay.classList.add("active");
+}
+
+function closeDetail() {
+  document.getElementById("detail-overlay").classList.remove("active");
+}
+
+loadData();
+setInterval(loadData, 45000);
+
+if (!API_KEY) {
+  setTimeout(openConfig, 500);
+}
+</script>
+</body>
+</html>
